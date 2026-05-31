@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Data Siswa Dra. Numli Yamiza</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        madrasah: '#047857',
+                        madrasah_light: '#10b981',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Gaya Khusus untuk Format Print Rapor (Sesuai Gambar) */
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                font-family: "Times New Roman", Times, serif;
+                font-size: 12pt;
+                line-height: 1.5;
+                padding: 2cm;
+                color: black;
+            }
+            .print-title { text-align: center; font-weight: bold; margin-bottom: 30px; font-size: 14pt; }
+            .print-grid { display: grid; grid-template-columns: 220px 15px 1fr; margin-bottom: 4px; }
+            .print-grid-sub { display: grid; grid-template-columns: 30px 190px 15px 1fr; margin-bottom: 4px; }
+            .signature-box { display: flex; justify-content: space-between; margin-top: 50px; }
+            .photo-box { width: 3cm; height: 4cm; border: 1px solid black; display: flex; align-items: center; justify-content: center; font-size: 10pt; text-align: center; flex-direction: column; overflow: hidden; }
+            .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+            .sign-area { text-align: center; width: 250px; }
+            .sign-line { border-bottom: 1px solid black; margin-top: 70px; width: 100%; }
+        }
+        
+        /* Mencegah scrollbar ganda saat modal print aktif */
+        #print-area { display: none; }
+        @media print { #print-area { display: block; } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-madrasah text-white shadow-md print:hidden">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-2 font-bold text-lg cursor-pointer" onclick="showView('form-view')">
+                <i class="fas fa-school"></i> Dra. Numli Yamiza
+            </div>
+            <div>
+                <button id="navAdminBtn" onclick="showView('login-view')" class="text-sm bg-white/20 hover:bg-white/30 px-4 py-2 rounded-full transition">
+                    <i class="fas fa-user-shield"></i> Login Admin
+                </button>
+                <button id="navLogoutBtn" onclick="logout()" class="hidden text-sm bg-red-500 hover:bg-red-600 px-4 py-2 rounded-full transition">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex-grow container mx-auto px-4 py-8 max-w-4xl print:hidden">
+
+        <!-- ==================== VIEW 1: FORM SISWA ==================== -->
+        <div id="form-view" class="space-y-6">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-gray-800 uppercase tracking-wide">Form Identitas Peserta Didik</h1>
+                <p class="text-gray-500 mt-2">Isi data dengan lengkap dan benar.</p>
+            </div>
+
+            <form id="studentForm" class="space-y-6" onsubmit="submitData(event)">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex flex-col space-y-4">
+                        <div><label class="text-sm font-medium">1. Nama Peserta Didik (Lengkap)</label><input type="text" id="f_nama" required class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></div>
+                        
+                        <div><label class="text-sm font-medium">2. Nomor Induk</label><input type="text" id="f_nis" required class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></div>
+                        
+                        <div>
+                            <label class="text-sm font-medium">3. Tempat Tanggal Lahir</label>
+                            <div class="flex gap-2 mt-1">
+                                <input type="text" id="f_tmplahir" placeholder="Tempat" required class="w-1/2 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none">
+                                <input type="date" id="f_tgllahir" required class="w-1/2 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none">
+                            </div>
+                        </div>
+
+                        <div><label class="text-sm font-medium">4. Jenis Kelamin</label><select id="f_jk" required class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"><option value="">Pilih...</option><option value="Laki-laki">Laki-laki</option><option value="Perempuan">Perempuan</option></select></div>
+                        
+                        <div><label class="text-sm font-medium">5. Agama</label><input type="text" id="f_agama" value="Islam" class="w-full mt-1 px-4 py-2 border rounded-lg bg-gray-50" readonly></div>
+                        
+                        <div><label class="text-sm font-medium">6. Status dalam Keluarga</label><input type="text" id="f_status" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></div>
+                        
+                        <div><label class="text-sm font-medium">7. Anak ke</label><input type="number" id="f_anakke" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></div>
+                        
+                        <div><label class="text-sm font-medium">8. Alamat Peserta Didik</label><textarea id="f_alamat" rows="2" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></textarea></div>
+                        
+                        <div><label class="text-sm font-medium">9. Nomor Telepon Rumah</label><input type="tel" id="f_telp" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></div>
+                        
+                        <div><label class="text-sm font-medium">10. Sekolah Asal</label><input type="text" id="f_sekolahasal" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></div>
+                        
+                        <div class="pt-2"><h3 class="font-bold text-gray-800">11. Diterima di sekolah ini</h3></div>
+                        <div class="pl-4 space-y-4">
+                            <div><label class="text-sm font-medium">a. Di kelas</label><input type="text" id="f_dikelas" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></div>
+                            <div><label class="text-sm font-medium">b. Pada tanggal</label><input type="date" id="f_padatanggal" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></div>
+                        </div>
+
+                        <div class="pt-4 border-t"><h3 class="font-bold text-gray-800">12. Nama Orang Tua</h3></div>
+                        <div class="pl-4 space-y-4">
+                            <div><label class="text-sm font-medium">a. Ayah</label><input type="text" id="f_ayah" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></div>
+                            <div><label class="text-sm font-medium">b. Ibu</label><input type="text" id="f_ibu" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></div>
+                        </div>
+                        
+                        <div><label class="text-sm font-medium">13. Alamat Orang Tua</label><textarea id="f_alamatortu" rows="2" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></textarea></div>
+                        
+                        <div><label class="text-sm font-medium">14. Nomor Telepon Rumah</label><input type="tel" id="f_telportu" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></div>
+                        
+                        <div class="pt-2"><h3 class="font-bold text-gray-800">15. Pekerjaan Orang Tua</h3></div>
+                        <div class="pl-4 space-y-4">
+                            <div><label class="text-sm font-medium">a. Ayah</label><input type="text" id="f_kerjayah" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></div>
+                            <div><label class="text-sm font-medium">b. Ibu</label><input type="text" id="f_kerjaibu" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></div>
+                        </div>
+                        
+                        <div class="pt-4 border-t"><label class="text-sm font-medium">16. Nama Wali Peserta Didik</label><input type="text" id="f_wali" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></div>
+                        
+                        <div><label class="text-sm font-medium">17. Alamat Wali Peserta Didik</label><textarea id="f_alamatwali" rows="2" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></textarea></div>
+                        
+                        <div><label class="text-sm font-medium">18. Nomor Telpon Rumah</label><input type="tel" id="f_telpwali" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></div>
+                        
+                        <div><label class="text-sm font-medium">19. Pekerjaan Wali Peserta Didik</label><input type="text" id="f_kerjawali" class="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-madrasah outline-none"></div>
+                    </div>
+
+                    <!-- Upload Foto -->
+                    <div class="mt-8 pt-6 border-t flex flex-col items-center">
+                        <label class="text-sm font-bold text-gray-700 mb-4">Pas Foto 3x4 Berwarna</label>
+                        <div id="photoPreview" class="w-32 h-40 bg-gray-200 border-2 border-dashed border-gray-400 flex items-center justify-center rounded-lg overflow-hidden relative mb-4">
+                            <i id="placeholderIcon" class="fas fa-user text-4xl text-gray-400"></i>
+                            <img id="imageResult" class="hidden w-full h-full object-cover absolute top-0 left-0">
+                        </div>
+                        <div class="relative overflow-hidden inline-block text-center">
+                            <input type="file" id="f_foto" accept="image/*" capture="environment" class="absolute w-full h-full opacity-0 cursor-pointer z-10" onchange="previewFile()" required>
+                            <button type="button" class="bg-gray-800 text-white font-semibold py-2 px-6 rounded-full shadow transition">
+                                <i class="fas fa-camera"></i> Ambil Foto / Pilih Galeri
+                            </button>
+                        </div>
+                        <input type="hidden" id="f_foto_base64">
+                    </div>
+
+                </div>
+
+                <button type="submit" id="btnSubmit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg transition text-lg flex justify-center items-center gap-2">
+                    <i class="fas fa-paper-plane"></i> Kirim Data
+                </button>
+            </form>
+        </div>
+
+        <!-- ==================== VIEW 2: LOGIN ADMIN ==================== -->
+        <div id="login-view" class="hidden max-w-md mx-auto mt-20">
+            <div class="bg-white p-8 rounded-2xl shadow-md text-center">
+                <i class="fas fa-user-shield text-5xl text-madrasah mb-4"></i>
+                <h2 class="text-2xl font-bold mb-6">Login Admin</h2>
+                <input type="password" id="adminPassword" placeholder="Masukkan Password (demo: admin123)" class="w-full px-4 py-3 border rounded-lg mb-4 focus:ring-2 focus:ring-madrasah outline-none">
+                <button onclick="handleLogin()" class="w-full bg-madrasah text-white font-bold py-3 rounded-lg hover:bg-green-800 transition">
+                    Login
+                </button>
+                <p class="text-xs text-red-500 mt-2 hidden" id="loginError">Password salah!</p>
+            </div>
+        </div>
+
+        <!-- ==================== VIEW 3: ADMIN DASHBOARD ==================== -->
+        <div id="admin-view" class="hidden">
+            <div class="flex justify-between items-end mb-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-800">Data Peserta Didik</h2>
+                    <p class="text-sm text-gray-500">Rekapitulasi data yang telah masuk.</p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-gray-50 text-gray-600 border-b">
+                        <tr>
+                            <th class="p-4 font-semibold">No</th>
+                            <th class="p-4 font-semibold">Nama Lengkap</th>
+                            <th class="p-4 font-semibold">NIS</th>
+                            <th class="p-4 font-semibold">L/P</th>
+                            <th class="p-4 font-semibold text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody" class="divide-y">
+                        <!-- Data rows will be inserted here -->
+                    </tbody>
+                </table>
+                <div id="emptyState" class="p-8 text-center text-gray-500 hidden">Belum ada data siswa.</div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==================== AREA CETAK / PRINT RAPOR ==================== -->
+    <div id="print-area">
+        <div class="print-title">Keterangan Tentang Diri Peserta Didik</div>
+        
+        <div class="print-grid"><div>1. Nama Peserta Didik (Lengkap)</div><div>:</div><div id="p_nama"></div></div>
+        <div class="print-grid"><div>2. Nomor Induk</div><div>:</div><div id="p_nis"></div></div>
+        <div class="print-grid"><div>3. Tempat Tanggal Lahir</div><div>:</div><div id="p_ttl"></div></div>
+        <div class="print-grid"><div>4. Jenis Kelamin</div><div>:</div><div id="p_jk"></div></div>
+        <div class="print-grid"><div>5. Agama</div><div>:</div><div id="p_agama"></div></div>
+        <div class="print-grid"><div>6. Status dalam Keluarga</div><div>:</div><div id="p_status"></div></div>
+        <div class="print-grid"><div>7. Anak ke</div><div>:</div><div id="p_anakke"></div></div>
+        <div class="print-grid"><div>8. Alamat Peserta Didik</div><div>:</div><div id="p_alamat"></div></div>
+        <div class="print-grid"><div>9. Nomor Telepon Rumah</div><div>:</div><div id="p_telp"></div></div>
+        <div class="print-grid"><div>10. Sekolah Asal</div><div>:</div><div id="p_sekolahasal"></div></div>
+        
+        <div class="print-grid"><div>11. Diterima di sekolah ini</div><div></div><div></div></div>
+        <div class="print-grid-sub"><div></div><div>a. Di kelas</div><div>:</div><div id="p_dikelas"></div></div>
+        <div class="print-grid-sub"><div></div><div>b. Pada tanggal</div><div>:</div><div id="p_padatanggal"></div></div>
+        
+        <div class="print-grid"><div>12. Nama Orang Tua</div><div></div><div></div></div>
+        <div class="print-grid-sub"><div></div><div>a. Ayah</div><div>:</div><div id="p_ayah"></div></div>
+        <div class="print-grid-sub"><div></div><div>b. Ibu</div><div>:</div><div id="p_ibu"></div></div>
+        
+        <div class="print-grid"><div>13. Alamat Orang Tua</div><div>:</div><div id="p_alamatortu"></div></div>
+        <div class="print-grid"><div>14. Nomor Telepon Rumah</div><div>:</div><div id="p_telportu"></div></div>
+        
+        <div class="print-grid"><div>15. Pekerjaan Orang Tua</div><div></div><div></div></div>
+        <div class="print-grid-sub"><div></div><div>a. Ayah</div><div>:</div><div id="p_kerjayah"></div></div>
+        <div class="print-grid-sub"><div></div><div>b. Ibu</div><div>:</div><div id="p_kerjaibu"></div></div>
+        
+        <div class="print-grid"><div>16. Nama Wali Peserta Didik</div><div>:</div><div id="p_wali"></div></div>
+        <div class="print-grid"><div>17. Alamat Wali Peserta Didik</div><div>:</div><div id="p_alamatwali"></div></div>
+        <div class="print-grid"><div>18. Nomor Telpon Rumah</div><div>:</div><div id="p_telpwali"></div></div>
+        <div class="print-grid"><div>19. Pekerjaan Wali Peserta Didik</div><div>:</div><div id="p_kerjawali"></div></div>
+
+        <div class="signature-box">
+            <div class="photo-box">
+                <img id="p_foto" src="" style="display: none;" onload="this.style.display='block'">
+                <span id="p_foto_text">Pas Foto<br>3 x 4<br>Berwarna</span>
+            </div>
+            <div class="sign-area">
+                <div style="margin-bottom: 5px;">Probolinggo, ...................... 20..</div>
+                <div>Kepala Sekolah,</div>
+                <div style="margin-top: 70px; font-weight: bold; text-decoration: underline;">Dra. Numli Yamiza</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Utama -->
+    <script>
+        // URL Web App Google Apps Script (Isi setelah Anda men-deploy Script GAS)
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtJuSauvDtx00mJsOdj6pYg5q3Bg5IlhAFonHOyQoV2ofwxTtLhZ0wguCLm2yfyH7D-g/exec"; 
+
+        // Navigasi Tampilan
+        function showView(viewId) {
+            document.getElementById('form-view').classList.add('hidden');
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('admin-view').classList.add('hidden');
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        // Preview & Convert Image to Base64
+        function previewFile() {
+            const preview = document.getElementById('imageResult');
+            const icon = document.getElementById('placeholderIcon');
+            const file = document.getElementById('f_foto').files[0];
+            const reader = new FileReader();
+
+            reader.addEventListener("load", function () {
+                preview.src = reader.result;
+                preview.classList.remove('hidden');
+                icon.classList.add('hidden');
+                
+                // Simpan base64 ke hidden input untuk dikirim
+                const base64String = reader.result.replace("data:", "").replace(/^.+,/, "");
+                document.getElementById('f_foto_base64').value = reader.result; // Full data url for local
+            }, false);
+
+            if (file) reader.readAsDataURL(file);
+        }
+
+        // Submit Form (Menyimpan ke LocalStorage sebagai Simulasi + Fetch ke GAS jika ada)
+        async function submitData(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmit');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+            btn.disabled = true;
+
+            // Ambil semua data
+            const formData = {
+                id: Date.now().toString(),
+                tanggal_submit: new Date().toLocaleDateString('id-ID'),
+                nama: document.getElementById('f_nama').value,
+                nis: document.getElementById('f_nis').value,
+                jk: document.getElementById('f_jk').value,
+                tmplahir: document.getElementById('f_tmplahir').value,
+                tgllahir: document.getElementById('f_tgllahir').value,
+                agama: document.getElementById('f_agama').value,
+                status: document.getElementById('f_status').value,
+                anakke: document.getElementById('f_anakke').value,
+                telp: document.getElementById('f_telp').value,
+                alamat: document.getElementById('f_alamat').value,
+                sekolahasal: document.getElementById('f_sekolahasal').value,
+                dikelas: document.getElementById('f_dikelas').value,
+                padatanggal: document.getElementById('f_padatanggal').value,
+                ayah: document.getElementById('f_ayah').value,
+                ibu: document.getElementById('f_ibu').value,
+                alamatortu: document.getElementById('f_alamatortu').value,
+                telportu: document.getElementById('f_telportu').value,
+                kerjayah: document.getElementById('f_kerjayah').value,
+                kerjaibu: document.getElementById('f_kerjaibu').value,
+                wali: document.getElementById('f_wali').value,
+                telpwali: document.getElementById('f_telpwali').value,
+                alamatwali: document.getElementById('f_alamatwali').value,
+                kerjawali: document.getElementById('f_kerjawali').value,
+                foto_base64: document.getElementById('f_foto_base64').value 
+            };
+
+            // 1. Simpan di Local Storage (Untuk Simulasi Admin & Print)
+            let students = JSON.parse(localStorage.getItem('studentsData') || '[]');
+            // 2. Kirim ke Google Apps Script
+            if(GOOGLE_SCRIPT_URL !== "") {
+                try {
+                    await fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'text/plain;charset=utf-8'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+                } catch(err) {
+                    console.error("Gagal ke GAS:", err);
+                }
+            }
+
+            setTimeout(() => {
+                alert('Data berhasil disimpan!');
+                document.getElementById('studentForm').reset();
+                document.getElementById('imageResult').classList.add('hidden');
+                document.getElementById('placeholderIcon').classList.remove('hidden');
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Kirim Data';
+                btn.disabled = false;
+                window.scrollTo(0,0);
+            }, 1000);
+        }
+
+        // Login Admin
+        function handleLogin() {
+            const pass = document.getElementById('adminPassword').value;
+            if(pass === 'admin123') { // Password dummy
+                document.getElementById('loginError').classList.add('hidden');
+                document.getElementById('navAdminBtn').classList.add('hidden');
+                document.getElementById('navLogoutBtn').classList.remove('hidden');
+                document.getElementById('adminPassword').value = '';
+                showView('admin-view');
+                loadAdminData();
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            document.getElementById('navAdminBtn').classList.remove('hidden');
+            document.getElementById('navLogoutBtn').classList.add('hidden');
+            showView('form-view');
+        }
+
+        // Load Data ke Tabel Admin
+        function loadAdminData() {
+            const students = JSON.parse(localStorage.getItem('studentsData') || '[]');
+            const tbody = document.getElementById('dataTableBody');
+            const emptyState = document.getElementById('emptyState');
+            
+            tbody.innerHTML = '';
+            if(students.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                students.forEach((s, index) => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-50";
+                    tr.innerHTML = `
+                        <td class="p-4">${index + 1}</td>
+                        <td class="p-4 font-medium text-gray-800">${s.nama}</td>
+                        <td class="p-4">${s.nis}</td>
+                        <td class="p-4">${s.jk === 'Laki-laki' ? 'L' : 'P'}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="cetakRapor('${s.id}')" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-1 rounded shadow-sm text-xs font-bold">
+                                <i class="fas fa-print"></i> Cetak Format
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        // Fungsi Cetak (Mapping data ke layout Print)
+        function cetakRapor(id) {
+            const students = JSON.parse(localStorage.getItem('studentsData') || '[]');
+            const s = students.find(x => x.id === id);
+            if(!s) return;
+
+            // Format tanggal lahir
+            let tglLahirFormat = s.tgllahir;
+            if(tglLahirFormat) {
+                const dateObj = new Date(tglLahirFormat);
+                tglLahirFormat = dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            }
+
+            let tglMasukFormat = s.padatanggal;
+            if(tglMasukFormat) {
+                const dateObjM = new Date(tglMasukFormat);
+                tglMasukFormat = dateObjM.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+            }
+
+            // Map data ke ID elemen Print
+            document.getElementById('p_nama').innerText = s.nama;
+            document.getElementById('p_nis').innerText = s.nis;
+            document.getElementById('p_ttl').innerText = `${s.tmplahir}, ${tglLahirFormat}`;
+            document.getElementById('p_jk').innerText = s.jk;
+            document.getElementById('p_agama').innerText = s.agama;
+            document.getElementById('p_status').innerText = s.status;
+            document.getElementById('p_anakke').innerText = s.anakke;
+            document.getElementById('p_alamat').innerText = s.alamat;
+            document.getElementById('p_telp').innerText = s.telp;
+            document.getElementById('p_sekolahasal').innerText = s.sekolahasal;
+            document.getElementById('p_dikelas').innerText = s.dikelas;
+            document.getElementById('p_padatanggal').innerText = tglMasukFormat;
+            document.getElementById('p_ayah').innerText = s.ayah;
+            document.getElementById('p_ibu').innerText = s.ibu;
+            document.getElementById('p_alamatortu').innerText = s.alamatortu;
+            document.getElementById('p_telportu').innerText = s.telportu;
+            document.getElementById('p_kerjayah').innerText = s.kerjayah;
+            document.getElementById('p_kerjaibu').innerText = s.kerjaibu;
+            document.getElementById('p_wali').innerText = s.wali || '-';
+            document.getElementById('p_alamatwali').innerText = s.alamatwali || '-';
+            document.getElementById('p_telpwali').innerText = s.telpwali || '-';
+            document.getElementById('p_kerjawali').innerText = s.kerjawali || '-';
+
+            // Set Foto
+            const photoImg = document.getElementById('p_foto');
+            const photoText = document.getElementById('p_foto_text');
+            if(s.foto_base64) {
+                photoImg.src = s.foto_base64;
+                photoText.style.display = 'none';
+            } else {
+                photoImg.style.display = 'none';
+                photoText.style.display = 'block';
+            }
+
+            // Panggil Print Dialog Browser
+            window.print();
+        }
+    </script>
+</body>
+</html>
