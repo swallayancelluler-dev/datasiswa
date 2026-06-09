@@ -166,7 +166,7 @@
             <div class="bg-white p-8 rounded-2xl shadow-md text-center">
                 <i class="fas fa-user-shield text-5xl text-madrasah mb-4"></i>
                 <h2 class="text-2xl font-bold mb-6">Login Admin</h2>
-                <input type="password" id="adminPassword" placeholder="Masukkan Password (demo: admin123)" class="w-full px-4 py-3 border rounded-lg mb-4 focus:ring-2 focus:ring-madrasah outline-none">
+                <input type="password" id="adminPassword" placeholder="Masukkan Password" class="w-full px-4 py-3 border rounded-lg mb-4 focus:ring-2 focus:ring-madrasah outline-none">
                 <button onclick="handleLogin()" class="w-full bg-madrasah text-white font-bold py-3 rounded-lg hover:bg-green-800 transition">
                     Login
                 </button>
@@ -254,8 +254,12 @@
 
     <!-- Script Utama -->
     <script>
-        // URL Web App Google Apps Script (Isi setelah Anda men-deploy Script GAS)
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw_kPhEumQo7dKV8njIAnlV3BcB2VeogOMDHIPyy3MuJUL8vgEYopfg65_ZX8I8yS-AsQ/exec"; 
+        // MASUKKAN LINK GOOGLE SCRIPT ANDA DI ANTARA TANDA KUTIP DI BAWAH INI
+        // CONTOH: const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw_kPhEumQo7dKV8njIAnlV3BcB2VeogOMDHIPyy3MuJUL8vgEYopfg65_ZX8I8yS-AsQ/exec";
+        const GOOGLE_SCRIPT_URL = ""; 
+        
+        // Variabel untuk menyimpan data dari server
+        let globalStudentsData = []; 
 
         // Navigasi Tampilan
         function showView(viewId) {
@@ -285,7 +289,7 @@
             if (file) reader.readAsDataURL(file);
         }
 
-        // Submit Form (Menyimpan ke LocalStorage sebagai Simulasi + Fetch ke GAS jika ada)
+        // Submit Form
         async function submitData(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSubmit');
@@ -322,10 +326,8 @@
                 foto_base64: document.getElementById('f_foto_base64').value 
             };
 
-            // 1. Simpan di Local Storage (Untuk Simulasi Admin & Print)
-            let students = JSON.parse(localStorage.getItem('studentsData') || '[]');
-            // 2. Kirim ke Google Apps Script
-            if(GOOGLE_SCRIPT_URL !== "") {
+            // Kirim ke Google Apps Script
+            if(GOOGLE_SCRIPT_URL !== "" && GOOGLE_SCRIPT_URL.startsWith("http")) {
                 try {
                     await fetch(GOOGLE_SCRIPT_URL, {
                         method: 'POST',
@@ -334,20 +336,22 @@
                         },
                         body: JSON.stringify(formData)
                     });
+                    
+                    alert('Data BERHASIL disimpan ke Database!');
+                    document.getElementById('studentForm').reset();
+                    document.getElementById('imageResult').classList.add('hidden');
+                    document.getElementById('placeholderIcon').classList.remove('hidden');
+                    window.scrollTo(0,0);
                 } catch(err) {
+                    alert("Koneksi gagal. Pastikan link Google Script sudah benar.");
                     console.error("Gagal ke GAS:", err);
                 }
+            } else {
+                alert("ERROR: Link Google Script belum dimasukkan ke dalam kode HTML!");
             }
 
-            setTimeout(() => {
-                alert('Data berhasil disimpan!');
-                document.getElementById('studentForm').reset();
-                document.getElementById('imageResult').classList.add('hidden');
-                document.getElementById('placeholderIcon').classList.remove('hidden');
-                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Kirim Data';
-                btn.disabled = false;
-                window.scrollTo(0,0);
-            }, 1000);
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Kirim Data';
+            btn.disabled = false;
         }
 
         // Login Admin
@@ -371,40 +375,58 @@
             showView('form-view');
         }
 
-        // Load Data ke Tabel Admin
-        function loadAdminData() {
-            const students = JSON.parse(localStorage.getItem('studentsData') || '[]');
+        // Load Data ke Tabel Admin (Menarik dari Spreadsheet)
+        async function loadAdminData() {
             const tbody = document.getElementById('dataTableBody');
             const emptyState = document.getElementById('emptyState');
             
-            tbody.innerHTML = '';
-            if(students.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="p-8 text-center text-blue-600"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><br>Sedang menarik data dari Spreadsheet...</td></tr>';
+            emptyState.classList.add('hidden');
+
+            if(GOOGLE_SCRIPT_URL === "" || !GOOGLE_SCRIPT_URL.startsWith("http")) {
+                tbody.innerHTML = '';
+                emptyState.innerText = "Error: Link Google Script belum diisi di dalam kode HTML. Silakan edit file index.html dan masukkan linknya.";
                 emptyState.classList.remove('hidden');
-            } else {
-                emptyState.classList.add('hidden');
-                students.forEach((s, index) => {
-                    const tr = document.createElement('tr');
-                    tr.className = "hover:bg-gray-50";
-                    tr.innerHTML = `
-                        <td class="p-4">${index + 1}</td>
-                        <td class="p-4 font-medium text-gray-800">${s.nama}</td>
-                        <td class="p-4">${s.nis}</td>
-                        <td class="p-4">${s.jk === 'Laki-laki' ? 'L' : 'P'}</td>
-                        <td class="p-4 text-center">
-                            <button onclick="cetakRapor('${s.id}')" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-1 rounded shadow-sm text-xs font-bold">
-                                <i class="fas fa-print"></i> Cetak Format
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
+                return;
+            }
+
+            try {
+                const response = await fetch(GOOGLE_SCRIPT_URL);
+                const students = await response.json();
+                globalStudentsData = students; // Simpan ke variabel global untuk dicetak
+                
+                tbody.innerHTML = '';
+                if(students.length === 0) {
+                    emptyState.innerText = "Belum ada data siswa di Spreadsheet.";
+                    emptyState.classList.remove('hidden');
+                } else {
+                    students.forEach((s, index) => {
+                        const tr = document.createElement('tr');
+                        tr.className = "hover:bg-gray-50";
+                        tr.innerHTML = `
+                            <td class="p-4 border-b">${index + 1}</td>
+                            <td class="p-4 border-b font-medium text-gray-800">${s.nama || '-'}</td>
+                            <td class="p-4 border-b">${s.nis || '-'}</td>
+                            <td class="p-4 border-b">${s.jk === 'Laki-laki' ? 'L' : 'P'}</td>
+                            <td class="p-4 border-b text-center">
+                                <button onclick="cetakRapor('${s.id}')" class="bg-blue-100 text-blue-700 hover:bg-blue-200 px-3 py-1 rounded shadow-sm text-xs font-bold transition">
+                                    <i class="fas fa-print"></i> Cetak
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            } catch (error) {
+                tbody.innerHTML = '';
+                emptyState.innerText = "Gagal mengambil data. Pastikan Apps Script sudah di Deploy (New Version) dengan akses 'Semua Orang'.";
+                emptyState.classList.remove('hidden');
             }
         }
 
         // Fungsi Cetak (Mapping data ke layout Print)
         function cetakRapor(id) {
-            const students = JSON.parse(localStorage.getItem('studentsData') || '[]');
-            const s = students.find(x => x.id === id);
+            const s = globalStudentsData.find(x => x.id === id);
             if(!s) return;
 
             // Format tanggal lahir
@@ -447,7 +469,9 @@
             // Set Foto
             const photoImg = document.getElementById('p_foto');
             const photoText = document.getElementById('p_foto_text');
-            if(s.foto_base64) {
+            
+            // Jika ada link foto dari Google Drive
+            if(s.foto_base64 && s.foto_base64.startsWith("http")) {
                 photoImg.src = s.foto_base64;
                 photoText.style.display = 'none';
             } else {
