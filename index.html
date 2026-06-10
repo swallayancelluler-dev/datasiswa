@@ -21,6 +21,10 @@
     <style>
         /* Gaya Khusus untuk Format Print Rapor (Sesuai Gambar) */
         @media print {
+            /* Menghilangkan header dan footer bawaan browser (URL dan Tanggal) */
+            @page { margin: 0; }
+            body { margin: 1.6cm; } /* Memberi sedikit margin kertas */
+            
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
             #print-area {
@@ -31,7 +35,6 @@
                 font-family: "Times New Roman", Times, serif;
                 font-size: 12pt;
                 line-height: 1.5;
-                padding: 2cm;
                 color: black;
             }
             .print-title { text-align: center; font-weight: bold; margin-bottom: 30px; font-size: 14pt; }
@@ -244,10 +247,9 @@
                 <img id="p_foto" src="" style="display: none;" onload="this.style.display='block'">
                 <span id="p_foto_text">Pas Foto<br>3 x 4<br>Berwarna</span>
             </div>
+            <!-- Bagian Tanda Tangan Telah Dihapus Sesuai Permintaan -->
             <div class="sign-area">
-                <div style="margin-bottom: 5px;">Probolinggo, ...................... 20..</div>
-                <div>Kepala Sekolah,</div>
-                <div style="margin-top: 70px; font-weight: bold; text-decoration: underline;">Dra. Numli Yamiza</div>
+               <!-- Kosong -->
             </div>
         </div>
     </div>
@@ -255,7 +257,7 @@
     <!-- Script Utama -->
     <script>
         // MASUKKAN LINK GOOGLE SCRIPT ANDA DI ANTARA TANDA KUTIP DI BAWAH INI
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwLeL5pOiTyIZBlGIXWA3gTegb8WMLEvmHgsjzS5FKMsjpWGZnRwtCAFDBkIJD43r7EMQ/exec"; 
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyvw03OoeoLAYRMeVRTyvqd_U-uDLOfLa0U0Gyh1rLs8y1iVQP_sVyWtPdEfx01C4RLcg/exec"; 
         
         // Variabel untuk menyimpan data dari server
         let globalStudentsData = []; 
@@ -465,21 +467,27 @@
             document.getElementById('p_telpwali').innerText = s.telpwali || '-';
             document.getElementById('p_kerjawali').innerText = s.kerjawali || '-';
 
-            // Set Foto
+            // Set Foto Langsung dari Data Base64 (Bukan dari Google Drive Link) untuk memastikan foto langsung muncul
             const photoImg = document.getElementById('p_foto');
             const photoText = document.getElementById('p_foto_text');
             
-            // Jika ada link foto dari Google Drive
-            if(s.foto_base64 && s.foto_base64.startsWith("http")) {
-                photoImg.src = s.foto_base64;
+            // Kita gunakan data.foto_base64 yang dikirim ke spreadsheet sebagai gambar aslinya
+            if(s.foto_base64 && s.foto_base64.length > 100) {
+                // Menambahkan header data base64 jpeg jika belum ada
+                const imgSrc = s.foto_base64.startsWith("data:image") ? s.foto_base64 : "data:image/jpeg;base64," + s.foto_base64;
+                photoImg.src = imgSrc;
+                photoImg.style.display = 'block';
                 photoText.style.display = 'none';
+                
+                // Menunggu foto dirender (dimuat) oleh browser sebelum membuka jendela Print
+                photoImg.onload = function() {
+                    window.print();
+                };
             } else {
                 photoImg.style.display = 'none';
                 photoText.style.display = 'block';
+                window.print();
             }
-
-            // Panggil Print Dialog Browser
-            window.print();
         }
     </script>
 </body>
