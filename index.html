@@ -21,10 +21,7 @@
     <style>
         /* Gaya Khusus untuk Format Print Rapor (Sesuai Gambar) */
         @media print {
-            /* Menghilangkan header dan footer bawaan browser (URL dan Tanggal) */
-            @page { margin: 0; }
-            body { margin: 1.6cm; } /* Memberi sedikit margin kertas */
-            
+            @page { size: A4; margin: 0; } /* Menghilangkan URL/Tanggal bawaan browser */
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
             #print-area {
@@ -32,6 +29,8 @@
                 left: 0;
                 top: 0;
                 width: 100%;
+                box-sizing: border-box; /* Pastikan padding tidak membuat lebar melebihi kertas */
+                padding: 2.5cm 2cm 2.5cm 2.5cm; /* Jarak Tepi Kertas: Atas, Kanan, Bawah, Kiri */
                 font-family: "Times New Roman", Times, serif;
                 font-size: 12pt;
                 line-height: 1.5;
@@ -257,7 +256,7 @@
     <!-- Script Utama -->
     <script>
         // MASUKKAN LINK GOOGLE SCRIPT ANDA DI ANTARA TANDA KUTIP DI BAWAH INI
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxcmxPYhQejVX5iSSGQUsqp1LUA6397vyKk0k-d_67maXnfgQ5B-zOwMzArdDuza3C6Pg/exec"; 
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDP_E8kkhQPk3rWHjZn0iFqB-XvtWeKgMtaj97PukLNJdOHt61PzcbgBrJP5937U3YUg/exec"; 
         
         // Variabel untuk menyimpan data dari server
         let globalStudentsData = []; 
