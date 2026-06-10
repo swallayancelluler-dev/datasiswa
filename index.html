@@ -21,7 +21,7 @@
     <style>
         /* Gaya Khusus untuk Format Print Rapor (Sesuai Gambar) */
         @media print {
-            @page { size: A4; margin: 0; } /* Menghilangkan URL/Tanggal bawaan browser */
+            @page { size: A4; margin: 0; } /* Mencoba menghilangkan Header/Footer via CSS */
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
             #print-area {
@@ -29,21 +29,48 @@
                 left: 0;
                 top: 0;
                 width: 100%;
-                box-sizing: border-box; /* Pastikan padding tidak membuat lebar melebihi kertas */
-                padding: 2.5cm 2cm 2.5cm 2.5cm; /* Jarak Tepi Kertas: Atas, Kanan, Bawah, Kiri */
+                box-sizing: border-box; 
+                padding: 1.5cm 2cm; /* Margin yang pas agar tidak lompat ke halaman 2 */
                 font-family: "Times New Roman", Times, serif;
-                font-size: 12pt;
-                line-height: 1.5;
+                font-size: 11pt; /* Diperkecil sedikit agar muat 1 halaman */
+                line-height: 1.3; /* Spasi dirapatkan */
                 color: black;
             }
-            .print-title { text-align: center; font-weight: bold; margin-bottom: 30px; font-size: 14pt; }
-            .print-grid { display: grid; grid-template-columns: 220px 15px 1fr; margin-bottom: 4px; }
-            .print-grid-sub { display: grid; grid-template-columns: 30px 190px 15px 1fr; margin-bottom: 4px; }
-            .signature-box { display: flex; justify-content: space-between; margin-top: 50px; }
-            .photo-box { width: 3cm; height: 4cm; border: 1px solid black; display: flex; align-items: center; justify-content: center; font-size: 10pt; text-align: center; flex-direction: column; overflow: hidden; }
-            .photo-box img { width: 100%; height: 100%; object-fit: cover; }
+            .print-title { text-align: center; font-weight: bold; margin-bottom: 20px; font-size: 13pt; }
+            .print-grid { display: grid; grid-template-columns: 210px 15px 1fr; margin-bottom: 2px; }
+            .print-grid-sub { display: grid; grid-template-columns: 30px 180px 15px 1fr; margin-bottom: 2px; }
+            
+            /* Mencegah kotak tanda tangan terpotong halaman */
+            .signature-box { 
+                display: flex; 
+                justify-content: space-between; 
+                margin-top: 30px; 
+                page-break-inside: avoid; /* PAKSA JANGAN PINDAH HALAMAN */
+            }
+            
+            .photo-box { 
+                width: 3cm; 
+                height: 4cm; 
+                border: 1px solid black; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                font-size: 10pt; 
+                text-align: center; 
+                flex-direction: column; 
+                overflow: hidden; 
+            }
+            
+            /* Mengatur gambar agar langsung muncul di dalam kotak */
+            .photo-box img { 
+                width: 100%; 
+                height: 100%; 
+                object-fit: cover; 
+                display: block !important; /* Paksa muncul saat print */
+            }
+            
             .sign-area { text-align: center; width: 250px; }
-            .sign-line { border-bottom: 1px solid black; margin-top: 70px; width: 100%; }
+            .sign-line { border-bottom: 1px solid black; margin-top: 60px; width: 100%; }
         }
         
         /* Mencegah scrollbar ganda saat modal print aktif */
@@ -256,7 +283,7 @@
     <!-- Script Utama -->
     <script>
         // MASUKKAN LINK GOOGLE SCRIPT ANDA DI ANTARA TANDA KUTIP DI BAWAH INI
-        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDP_E8kkhQPk3rWHjZn0iFqB-XvtWeKgMtaj97PukLNJdOHt61PzcbgBrJP5937U3YUg/exec"; 
+        const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz7HcXwS-Psd33fZh6UAZW89_Y1hTlB35r3pSRQJxRVekF_-4gEC5TzTKpxmBZzfb5WUg/exec"; 
         
         // Variabel untuk menyimpan data dari server
         let globalStudentsData = []; 
